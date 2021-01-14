@@ -1,0 +1,39 @@
+version: "3.1"
+services:
+    memcached:
+      image: memcached:alpine
+      container_name: middleware-memcached
+    redis:
+      image: redis:alpine
+      container_name: middleware-redis
+    mysql:
+      image: mysql:8.0
+      container_name: middleware-mysql
+      working_dir: /application
+      volumes:
+        - .:/application
+      environment:
+        - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+        - MYSQL_DATABASE=${DB_DATABASE}
+        - MYSQL_USER=${DB_USERNAME}
+        - MYSQL_PASSWORD=${DB_PASSWORD}
+      ports:
+        - ${DB_PORT}:3306
+      command: --default-authentication-plugin=mysql_native_password
+    webserver:
+      image: nginx:alpine
+      container_name: middleware-webserver
+      working_dir: /application
+      volumes:
+          - .:/application
+          - ./phpdocker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      ports:
+       - ${APP_PORT}:80
+    php-fpm:
+      build: phpdocker/php-fpm
+      container_name: middleware-php-fpm
+      working_dir: /application
+      volumes:
+        - .:/application
+        - ./phpdocker/php-fpm/php-ini-overrides.ini:/etc/php/7.4/fpm/conf.d/99-overrides.ini
+
